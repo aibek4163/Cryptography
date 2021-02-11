@@ -1,0 +1,84 @@
+{% extends 'main/layout.html' %}
+
+{% block title %}
+    Vigenere
+{% endblock %}
+
+{% block content %}
+    <h3 class="display-4">Vigenere cipher</h3>
+    <script>
+        $(document).ready(function () {
+            $('a[data-toggle="tab"]').on('show.bs.tab', function (e) {
+                localStorage.setItem('activeTab', $(e.target).attr('href'));
+            });
+            var activeTab = localStorage.getItem('activeTab');
+            if (activeTab) {
+                $('#myTab a[href="' + activeTab + '"]').tab('show');
+            }
+        });
+    </script>
+
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
+               aria-selected="true">Encrypt</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab" aria-controls="profile"
+               aria-selected="false">Decrypt</a>
+        </li>
+    </ul>
+    <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+            <div class="jumbotron jumbotron-fluid shadow mb-5 rounded" style="background-color: #e9ecef;">
+                <div class="container">
+                    <form action="{% url "vigenere_enc" %}" method="POST">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="exampleFormControlTextarea1">Plain Text</label>
+                            <textarea name="plain_text" class="form-control" id="exampleFormControlTextarea1"
+                                      rows="5"
+                                      placeholder="Write words...">{{ plain_text }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Code word" name="code" value="{{ code }}">
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary form-control">Encrypt</button>
+                        </div>
+                    </form>
+                    <div class="form-group">
+                        <label for="exampleFormControlTextarea1">Encrypted Text</label>
+                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="5" readonly
+                                  style="background-color: white">{{ encrypted }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+            <div class="jumbotron jumbotron-fluid shadow mb-5 rounded" style="background-color: #e9ecef;">
+                <div class="container">
+                    <form action="{% url "vigenere_dec" %}" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="exampleFormControlTextarea1">Decrypted Text</label>
+                            <textarea class="form-control" id="exampleFormControlTextarea1" rows="5"
+                                      placeholder="Write words..." name="decrypted_text">{{ cipher }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Code word" name="code" value="{{ dec_code }}">
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-success form-control" type="submit">Decrypt</button>
+                        </div>
+                    </form>
+                    <div class="form-group">
+                        <label for="exampleFormControlTextarea1">Decrypted Text</label>
+                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="5" readonly
+                                  style="background-color: white">{{ decrypted }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

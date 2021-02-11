@@ -1,0 +1,404 @@
+{% extends 'main/layout.html' %}
+
+{% block title %}
+    Blowfish
+{% endblock %}
+
+{% block content %}
+    <h3 class="display-4">Blowfish cipher</h3>
+    <script>
+        $(document).ready(function () {
+            $('a[data-toggle="tab"]').on('show.bs.tab', function (e) {
+                localStorage.setItem('activeTab', $(e.target).attr('href'));
+            });
+            var activeTab = localStorage.getItem('activeTab');
+            if (activeTab) {
+                $('#myTab a[href="' + activeTab + '"]').tab('show');
+            }
+        });
+    </script>
+
+    <h6>In order to encrypt message in Blowfish your key must be minimum <strong>FOUR length</strong></h6>
+    <div class="accordion mb-3" id="accordionExample">
+        <div class="card">
+            <div class="card-header" id="headingTwo">
+                <h2 class="mb-0">
+                    <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                            data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        Electronic Codebook Mode (ECB)
+                    </button>
+                </h2>
+            </div>
+            <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab"
+                               aria-controls="home"
+                               aria-selected="true">Encrypt</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab"
+                               aria-controls="profile"
+                               aria-selected="false">Decrypt</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="myTabContent">
+                        <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+                            <div class="jumbotron jumbotron-fluid shadow mb-5 rounded"
+                                 style="background-color: #e9ecef;">
+                                <div class="container">
+                                    <form action="{% url "blowfish_ecb_enc" %}" method="POST">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label for="exampleFormControlTextarea1">Plain Text</label>
+                                            <textarea name="plain_text" class="form-control"
+                                                      id="exampleFormControlTextarea1"
+                                                      rows="5"
+                                                      placeholder="Write words...">{{ plain_ecb }}</textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" placeholder="Code word" name="code"
+                                                   value="{{ code_ecb }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <button type="submit" class="btn btn-primary form-control">Encrypt</button>
+                                        </div>
+                                    </form>
+                                    <div class="form-group">
+                                        <label for="exampleFormControlTextarea1">Encrypted Text</label>
+                                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="5"
+                                                  readonly
+                                                  style="background-color: white">{{ encrypted_ecb }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                            <div class="jumbotron jumbotron-fluid shadow mb-5 rounded"
+                                 style="background-color: #e9ecef;">
+                                <div class="container">
+                                    <form action="{% url "blowfish_ecb_dec" %}" method="post">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label for="exampleFormControlTextarea1">Decrypted Text</label>
+                                            <textarea class="form-control" id="exampleFormControlTextarea1" rows="5"
+                                                      placeholder="Write words..."
+                                                      name="cipher_text">{{ cipher_text }}</textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" placeholder="Key" name="code"
+                                                   value="{{ dec_code_ecb }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <button class="btn btn-success form-control" type="submit">Decrypt</button>
+                                        </div>
+                                    </form>
+                                    <div class="form-group">
+                                        <label for="exampleFormControlTextarea1">Decrypted Text</label>
+                                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="5"
+                                                  readonly
+                                                  style="background-color: white">{{ result_ecb }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header" id="headingFour">
+                <h2 class="mb-0">
+                    <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                            data-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                        Cipher-Block Chaining Mode (CBC)
+                    </button>
+                </h2>
+            </div>
+            <div id="collapseFour" class="collapse" aria-labelledby="headingFour" data-parent="#accordionExample">
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" id="home-tab" data-toggle="tab" href="#cbcEnc" role="tab"
+                               aria-controls="home"
+                               aria-selected="true">Encrypt</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="profile-tab" data-toggle="tab" href="#cbcDec" role="tab"
+                               aria-controls="profile"
+                               aria-selected="false">Decrypt</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="myTabContent">
+                        <div class="tab-pane fade show active" id="cbcEnc" role="tabpanel" aria-labelledby="home-tab">
+                            <div class="jumbotron jumbotron-fluid shadow mb-5 rounded"
+                                 style="background-color: #e9ecef;">
+                                <div class="container">
+                                    <form action="{% url "blowfish_cbc_enc" %}" method="POST">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label for="exampleFormControlTextarea1">Plain Text</label>
+                                            <textarea name="plain_text" class="form-control"
+                                                      id="exampleFormControlTextarea1"
+                                                      rows="5"
+                                                      placeholder="Write words...">{{ plain_cbc }}</textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            {% if err != "" %}
+                                                <h5>{{ err }}</h5>
+                                            {% endif %}
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" placeholder="Code word" name="code"
+                                                   value="{{ code_cbc }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <button type="submit" class="btn btn-primary form-control">Encrypt</button>
+                                        </div>
+                                    </form>
+                                    <div class="form-group">
+                                        <label for="exampleFormControlTextarea1">Encrypted Text</label>
+                                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="5"
+                                                  readonly
+                                                  style="background-color: white">{{ encrypted_cbc }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="cbcDec" role="tabpanel" aria-labelledby="profile-tab">
+                            <div class="jumbotron jumbotron-fluid shadow mb-5 rounded"
+                                 style="background-color: #e9ecef;">
+                                <div class="container">
+                                    <form action="{% url "blowfish_cbc_dec" %}" method="post">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label for="exampleFormControlTextarea1">Decrypted Text</label>
+                                            <textarea class="form-control" id="exampleFormControlTextarea1" rows="5"
+                                                      placeholder="Write words..."
+                                                      name="cipher_text">{{ cipher_text_cbc }}</textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" placeholder="Key" name="code"
+                                                   value="{{ dec_code_cbc }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <button class="btn btn-success form-control" type="submit">Decrypt</button>
+                                        </div>
+                                    </form>
+                                    <div class="form-group">
+                                        <label for="exampleFormControlTextarea1">Decrypted Text</label>
+                                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="5"
+                                                  readonly
+                                                  style="background-color: white">{{ result_cbc }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header" id="head7">
+                <h2 class="mb-0">
+                    <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                            data-target="#c7" aria-expanded="false" aria-controls="c7">
+                        Cipher Feedback Mode (CFB)
+                    </button>
+                </h2>
+            </div>
+            <div id="c7" class="collapse" aria-labelledby="head7" data-parent="#accordionExample">
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" id="home-tab" data-toggle="tab" href="#cfbEnc" role="tab"
+                               aria-controls="home"
+                               aria-selected="true">Encrypt</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="profile-tab" data-toggle="tab" href="#cfbDec" role="tab"
+                               aria-controls="profile"
+                               aria-selected="false">Decrypt</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="myTabContent">
+                        <div class="tab-pane fade show active" id="cfbEnc" role="tabpanel" aria-labelledby="home-tab">
+                            <div class="jumbotron jumbotron-fluid shadow mb-5 rounded"
+                                 style="background-color: #e9ecef;">
+                                <div class="container">
+                                    <form action="{% url "blowfish_cfb_enc" %}" method="POST">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label for="exampleFormControlTextarea1">Plain Text</label>
+                                            <textarea name="plain_text" class="form-control"
+                                                      id="exampleFormControlTextarea1"
+                                                      rows="5"
+                                                      placeholder="Write words...">{{ plain_cfb }}</textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            {% if err != "" %}
+                                                <h5>{{ err }}</h5>
+                                            {% endif %}
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" placeholder="Code word" name="code"
+                                                   value="{{ code_cfb }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <button type="submit" class="btn btn-primary form-control">Encrypt</button>
+                                        </div>
+                                    </form>
+                                    <div class="form-group">
+                                        <label for="exampleFormControlTextarea1">Encrypted Text</label>
+                                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="5"
+                                                  readonly
+                                                  style="background-color: white">{{ encrypted_cfb }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="cfbDec" role="tabpanel" aria-labelledby="profile-tab">
+                            <div class="jumbotron jumbotron-fluid shadow mb-5 rounded"
+                                 style="background-color: #e9ecef;">
+                                <div class="container">
+                                    <form action="{% url "blowfish_cfb_dec" %}" method="post">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label for="exampleFormControlTextarea1">Decrypted Text</label>
+                                            <textarea class="form-control" id="exampleFormControlTextarea1" rows="5"
+                                                      placeholder="Write words..."
+                                                      name="cipher_text">{{ cipher_text_cfb }}</textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" placeholder="Key" name="code"
+                                                   value="{{ dec_code_cfb }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <button class="btn btn-success form-control" type="submit">Decrypt</button>
+                                        </div>
+                                    </form>
+                                    <div class="form-group">
+                                        <label for="exampleFormControlTextarea1">Decrypted Text</label>
+                                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="5"
+                                                  readonly
+                                                  style="background-color: white">{{ result_cfb }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header" id="head8">
+                <h2 class="mb-0">
+                    <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                            data-target="#c8" aria-expanded="false" aria-controls="c8">
+                        Output Feedback Mode (OFB)
+                    </button>
+                </h2>
+            </div>
+            <div id="c8" class="collapse" aria-labelledby="head8" data-parent="#accordionExample">
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" id="home-tab" data-toggle="tab" href="#ofbEnc" role="tab"
+                               aria-controls="home"
+                               aria-selected="true">Encrypt</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="profile-tab" data-toggle="tab" href="#ofbDec" role="tab"
+                               aria-controls="profile"
+                               aria-selected="false">Decrypt</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="myTabContent">
+                        <div class="tab-pane fade show active" id="ofbEnc" role="tabpanel" aria-labelledby="home-tab">
+                            <div class="jumbotron jumbotron-fluid shadow mb-5 rounded"
+                                 style="background-color: #e9ecef;">
+                                <div class="container">
+                                    <form action="{% url "blowfish_ofb_enc" %}" method="POST">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label for="exampleFormControlTextarea1">Plain Text</label>
+                                            <textarea name="plain_text" class="form-control"
+                                                      id="exampleFormControlTextarea1"
+                                                      rows="5"
+                                                      placeholder="Write words...">{{ plain_ofb }}</textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" placeholder="Code word" name="code"
+                                                   value="{{ code_ofb }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <button type="submit" class="btn btn-primary form-control">Encrypt</button>
+                                        </div>
+                                    </form>
+                                    <div class="form-group">
+                                        <label for="exampleFormControlTextarea1">Encrypted Text</label>
+                                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="5"
+                                                  readonly
+                                                  style="background-color: white">{{ encrypted_ofb }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="ofbDec" role="tabpanel" aria-labelledby="profile-tab">
+                            <div class="jumbotron jumbotron-fluid shadow mb-5 rounded"
+                                 style="background-color: #e9ecef;">
+                                <div class="container">
+                                    <form action="{% url "blowfish_ofb_dec" %}" method="post">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label for="exampleFormControlTextarea1">Decrypted Text</label>
+                                            <textarea class="form-control" id="exampleFormControlTextarea1" rows="5"
+                                                      placeholder="Write words..."
+                                                      name="cipher_text">{{ cipher_text_ofb }}</textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" placeholder="Key" name="code"
+                                                   value="{{ dec_code_ofb }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <button class="btn btn-success form-control" type="submit">Decrypt</button>
+                                        </div>
+                                    </form>
+                                    <div class="form-group">
+                                        <label for="exampleFormControlTextarea1">Decrypted Text</label>
+                                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="5"
+                                                  readonly
+                                                  style="background-color: white">{{ result_ofb }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Get saved data from sessionStorage
+            let selectedCollapse = sessionStorage.getItem('selectedCollapse');
+            if (selectedCollapse != null) {
+                $('.accordion .collapse').removeClass('show');
+                $(selectedCollapse).addClass('show');
+            }
+            //To set, which one will be opened
+            $('.accordion .btn-link').on('click', function () {
+                let target = $(this).data('target');
+                //Save data to sessionStorage
+                sessionStorage.setItem('selectedCollapse', target);
+            });
+        });
+    </script>
+
+
+{% endblock %}
