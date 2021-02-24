@@ -3,12 +3,20 @@ import urllib.parse
 
 from base64 import b64encode
 from base64 import b64decode
+
+import Crypto
+from Crypto.Util.number import isPrime
+from Crypto.Random import get_random_bytes
 from django.shortcuts import render, redirect
 from Crypto.Cipher import Blowfish
 from Crypto.Util.Padding import pad, unpad
 import binascii
-
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
 from django.urls import reverse
+# from main import rsa
+import ast
+import rsa
 
 
 def index(request):
@@ -521,18 +529,18 @@ def createEmptyMatrix(width, height, length):
     return matrix
 
 
-def getKeywordSequence(keyword):
-    sequence = []
-    for pos, ch in enumerate(keyword):
-        previousLetters = keyword[:pos]
-        newNumber = 1
-        for previousPos, previousCh in enumerate(previousLetters):
-            if previousCh > ch:
-                sequence[previousPos] += 1
-            else:
-                newNumber += 1
-        sequence.append(newNumber)
-    return sequence
+# def getKeywordSequence(keyword):
+#     sequence = []
+#     for pos, ch in enumerate(keyword):
+#         previousLetters = keyword[:pos]
+#         newNumber = 1
+#         for previousPos, previousCh in enumerate(previousLetters):
+#             if previousCh > ch:
+#                 sequence[previousPos] += 1
+#             else:
+#                 newNumber += 1
+#         sequence.append(newNumber)
+#     return sequence
 
 
 def blowfish_all(request):
@@ -743,4 +751,64 @@ def blowfish_ofb_dec(request):
     return render(request, 'main/blowfish.html', data)
 
 
+def store_key(key):
+    k = key
+    return k
 
+
+key_store = ""
+key_pair = RSA.generate(3072)
+
+
+def rsa_encrypt(request):
+    encrypted = ""
+    plain_text = ""
+    code = ""
+    public_pem = ""
+    private_pem = ""
+    if request.method == 'POST':
+        plain_text = request.POST['plain_text']
+        code = request.POST['code']
+        pr = RSA.generate(1024)
+        public_key = pr.publickey()
+        private_pem = pr.export_key().decode()
+        public_pem = public_key.export_key().decode()
+        with open('private_pem.pem', 'w') as pr:
+            pr.write(private_pem)
+        with open('public_pem.pem', 'w') as pu:
+            pu.write(public_pem)
+        pr_key = RSA.import_key(open('private_pem.pem', 'r').read())
+        pu_key = RSA.import_key(open('public_pem.pem', 'r').read())
+        cipher = PKCS1_OAEP.new(key=pu_key)
+        encrypted = cipher.encrypt(str.encode(plain_text))
+        encrypted = binascii.hexlify(encrypted).decode('utf-8')
+    data = {
+        "encrypted_rsa": encrypted,
+        "plain_text_rsa": plain_text,
+        "code_rsa": code,
+        "public_key": public_pem,
+        "private_key": private_pem,
+    }
+    return render(request, 'main/rsa.html', data)
+
+
+def rsa_decrypt(request):
+    cipher = ""
+    decrypted = ""
+    priv = ""
+    private_key_rsa = ""
+    if request.method == 'POST':
+        cipher = request.POST['cipher_rsa']
+        cipher = binascii.unhexlify(cipher)
+        private_key_rsa = request.POST['private_key_rsa']
+        pr_key = RSA.import_key(open('private_pem.pem', 'r').read())
+        p_test = RSA.import_key(private_key_rsa)
+        decrypt = PKCS1_OAEP.new(key=p_test)
+        decrypted = decrypt.decrypt(cipher)
+
+    data = {
+        "decrypted_rsa": decrypted.decode('utf8'),
+        "cipher_rsa": cipher,
+        "private_key_rsa": private_key_rsa,
+    }
+    return render(request, 'main/rsa.html', data)

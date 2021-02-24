@@ -48,4 +48,8 @@ urlpatterns = [
     path('blowfish_cfb_dec', views.blowfish_cfb_dec, name='blowfish_cfb_dec'),
     path('blowfish_ofb_enc', views.blowfish_ofb_enc, name='blowfish_ofb_enc'),
     path('blowfish_ofb_dec', views.blowfish_ofb_dec, name='blowfish_ofb_dec'),
+
+    # rsa
+    path('rsa_encrypt', views.rsa_encrypt, name="rsa_encrypt"),
+    path('rsa_decrypt', views.rsa_decrypt, name="rsa_decrypt"),
 ]
