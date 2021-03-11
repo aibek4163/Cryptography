@@ -1,0 +1,199 @@
+{% extends 'main/layout.html' %}
+
+{% block title %}
+    Diffie-Hellman
+{% endblock %}
+
+{% block content %}
+    <h3 class="display-4">Diffie-Hellman algorithm</h3>
+    <script>
+        $(document).ready(function () {
+            $('a[data-toggle="tab"]').on('show.bs.tab', function (e) {
+                localStorage.setItem('activeTab', $(e.target).attr('href'));
+            });
+            var activeTab = localStorage.getItem('activeTab');
+            if (activeTab) {
+                $('#myTab a[href="' + activeTab + '"]').tab('show');
+            }
+        });
+    </script>
+    {% if chats is not None %}
+        <h5>List of Users</h5>
+        {% for user in users %}
+            {% if user.id != request.session.current_user %}
+                <div class="card mb-3 mt-3" style="max-width: 100%;">
+                    <div class="row no-gutters">
+                        <div class="col-md-4 pt-3 pl-5 pb-3">
+                            <a href="#"><img
+                                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT8rQTfvDS0mK_Y09wABdP_UOwfxiuQLqWcUQ&usqp=CAU"
+                                    class="rounded-circle" alt="..."
+                                    width="100" height="100"></a>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title"><a
+                                        href="#">{{ user.login }}</a>
+                                </h5>
+                                {#                            <button type="button" class="btn" data-toggle="modal"#}
+                                {#                                    data-target="#send_message/{{ user.id }}" style="padding: 0;"><a#}
+                                {#                                    href="#">#}
+                                {#                                <i class="fab fa-telegram-plane"></i>#}
+                                {#                                Send Message#}
+                                {#                            </a>#}
+                                {#                            </button>#}
+                                <button type="button" class="btn btn-primary" data-toggle="modal"
+                                        data-target="#send_message{{ user.id }}">
+                                    <i class="fab fa-telegram-plane"></i>
+                                    Send Message
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <!-- Modal -->
+                <div class="modal fade" id="send_message{{ user.id }}" data-backdrop="static" data-keyboard="false"
+                     tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <form action="{% url 'send_message' %}" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="receiver_id" value="{{ user.id }}">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="staticBackdropLabel">Send message
+                                        to {{ user.login }}</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <textarea name="message_text" rows="7" class="form-control"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Send</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+
+        {% endfor %}
+        {% for chat in chats %}
+            <form action="" method="get">
+                {% csrf_token %}
+                <input type="hidden" name="chat_id" value="{{ chat.id }}">
+                <div class="card mb-3 mt-3" style="max-width: 100%;">
+                    <div class="row no-gutters">
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    {#                            <h5 class="card-title font-weight-bold italic"><a#}
+                                    {#                                    href="/chat_details?chat_id=<%=c.getId()%>">***<%=c.getOpponent_user_id().getFull_name()%>***</a>#}
+                                    {#                            </h5>#}
+                                    <h5 class="card-title"><a
+                                            href="/{{ chat.id }}">{{ chat.opponent_user_id.login }}</a>
+                                    </h5>
+                                    {#                            <p class="card-text"><small class="text-muted">{{ chat }}</small></p>#}
+                                </div>
+                                <p class="card-text mt-3"><small
+                                        class="text-muted">{{ chat.latest_message_text }}</small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        {% endfor %}
+    {% else %}
+        <h4>In order to chat you need to sign in</h4>
+    {% endif %}
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" id="home-tab" data-toggle="tab" href="#dh" role="tab" aria-controls="dh"
+               aria-selected="true">Generate Key exchange</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="profile-tab" data-toggle="tab" href="#rsaDEC" role="tab" aria-controls="profile"
+               aria-selected="false">Calculate Public Key</a>
+        </li>
+    </ul>
+    <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active" id="dh" role="tabpanel" aria-labelledby="home-tab">
+            <div class="jumbotron jumbotron-fluid shadow mb-5 rounded" style="background-color: #e9ecef;">
+                <div class="container">
+                    <form action="{% url "exchange" %}" method="POST">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="exampleFormControlTextarea1">Enter agreed on a huge prime number</label>
+                            <input name="prime_number" type="number" class="form-control"
+                                   id="exampleFormControlTextarea1"
+                                   placeholder="Enter prime number" value="{{ prime_number }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="privKey">Enter your private key</label>
+                            <input name="private_key" type="number" class="form-control"
+                                   id="exampleFormControlTextarea1"
+                                   placeholder="Enter prime number" value="{{ private_key }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="sec">Enter partner`s public number</label>
+                            <input name="public_key_1" type="number" class="form-control"
+                                   id="exampleFormControlTextarea1"
+                                   placeholder="Enter prime number" value="{{ public_key_1 }}">
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary form-control">Get shared secret key</button>
+                        </div>
+                    </form>
+                    <div class="form-group">
+                        <label for="public_key">Your secret keys:</label>
+                        <input name="first_private_key" type="number" class="form-control"
+                               id="exampleFormControlTextarea1"
+                               placeholder="Enter prime number" style="background-color: white" readonly
+                               value="{{ shared_key }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="rsaDEC" role="tabpanel" aria-labelledby="profile-tab">
+            <div class="jumbotron jumbotron-fluid shadow mb-5 rounded" style="background-color: #e9ecef;">
+                <div class="container">
+                    <form action="{% url "generate_public" %}" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="exampleFormControlTextarea1">Enter agreed on a huge prime number</label>
+                            <input name="prime_number" type="number" class="form-control"
+                                   id="exampleFormControlTextarea1"
+                                   placeholder="Enter prime number" value="{{ prime_number }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="pubKey">Enter Generator number</label>
+                            <input name="generator" type="number" class="form-control" id="exampleFormControlTextarea1"
+                                   placeholder="Enter number" value="{{ generator }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="privKey">Enter your private random number</label>
+                            <input name="private_key" type="number" class="form-control"
+                                   id="exampleFormControlTextarea1"
+                                   placeholder="Enter number" value="{{ private_key }}">
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-success form-control" type="submit">Calculate</button>
+                        </div>
+                    </form>
+                    <div class="form-group">
+                        <label for="exampleFormControlTextarea1">Public Key</label>
+                        <input type="number" class="form-control"
+                               id="exampleFormControlTextarea1"
+                               placeholder="Enter prime number" style="background-color: white" readonly
+                               value="{{ public_key }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

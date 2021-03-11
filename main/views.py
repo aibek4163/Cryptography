@@ -847,10 +847,73 @@ def login_page(request):
     return render(request, 'main/login.html', data)
 
 
+def logout(request):
+    request.session['current_user'] = 0
+    del request.session['current_user_login']
+    del request.session['current_user_password']
+    return render(request, 'main/login.html')
 
 
+def registration_page(request):
+    login = ""
+    password = ""
+    if request.method == "POST":
+        login = request.POST['login']
+        password = request.POST['password']
+        user = User.objects.create(login=login, password=password)
+        request.session['current_user'] = user.id
+        request.session['current_user_login'] = user.login
+        request.session['current_user_password'] = user.password
+        return redirect('dh_key_exchanges')
+    else:
+        # data = {}
+        return render(request, 'main/registration.html')
 
 
+def calculate_public_key(request):
+    private_key = ""
+    prime_number = ""
+    generator = ""
+    public_key = ""
+    if request.method == 'POST':
+        private_key = request.POST['private_key']
+        generator = request.POST['generator']
+        prime_number = request.POST['prime_number']
+        private_key = int(private_key)
+        generator = int(generator)
+        prime_number = int(prime_number)
+        public_key = int(pow(generator, private_key, prime_number))
+
+    context = {
+        "private_key": private_key,
+        "prime_number": prime_number,
+        "generator": generator,
+        "public_key": public_key,
+    }
+    return render(request, "main/DH.html", context)
+
+
+def dh_key_exchanges(request):
+    prime_number = ""
+    private_key = ""
+    public_key_1 = ""
+    shared_key = ""
+    if request.method == 'POST':
+        prime_number = request.POST['prime_number']
+        private_key = request.POST['private_key']
+        public_key_1 = request.POST['public_key_1']
+        prime_number = int(prime_number)
+        private_key = int(private_key)
+        public_key_1 = int(public_key_1)
+        shared_key = int(pow(public_key_1, private_key, prime_number))
+
+    context = {
+        "prime_number": prime_number,
+        "private_key": private_key,
+        "public_key_1": public_key_1,
+        "shared_key": shared_key,
+    }
+    return render(request, "main/DH.html", context)
 
 
 def chat_page(request):
@@ -934,6 +997,3 @@ def add_message(request):
         chat.save()
         msg.save()
     return HttpResponseRedirect(reverse('chat_details', args=(chat_id,)))
-
-
-
