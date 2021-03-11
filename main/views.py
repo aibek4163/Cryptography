@@ -4,9 +4,8 @@ import urllib.parse
 from base64 import b64encode
 from base64 import b64decode
 
-import Crypto
-from Crypto.Util.number import isPrime
-from Crypto.Random import get_random_bytes
+from django.db.models import Q
+from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from Crypto.Cipher import Blowfish
 from Crypto.Util.Padding import pad, unpad
@@ -14,9 +13,11 @@ import binascii
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 from django.urls import reverse
-# from main import rsa
-import ast
-import rsa
+from main.models import User, Chat, Message
+import pyDHE
+
+
+# from django.shortcuts import get_object_or_404
 
 
 def index(request):
@@ -756,8 +757,8 @@ def store_key(key):
     return k
 
 
-key_store = ""
-key_pair = RSA.generate(3072)
+# key_store = ""
+# key_pair = RSA.generate(3072)
 
 
 def rsa_encrypt(request):
@@ -799,12 +800,12 @@ def rsa_decrypt(request):
     private_key_rsa = ""
     if request.method == 'POST':
         cipher = request.POST['cipher_rsa']
-        cipher = binascii.unhexlify(cipher)
+        cipher_text = binascii.unhexlify(cipher)
         private_key_rsa = request.POST['private_key_rsa']
-        pr_key = RSA.import_key(open('private_pem.pem', 'r').read())
+        # pr_key = RSA.import_key(open('private_pem.pem', 'r').read())
         p_test = RSA.import_key(private_key_rsa)
         decrypt = PKCS1_OAEP.new(key=p_test)
-        decrypted = decrypt.decrypt(cipher)
+        decrypted = decrypt.decrypt(cipher_text)
 
     data = {
         "decrypted_rsa": decrypted.decode('utf8'),
@@ -812,3 +813,127 @@ def rsa_decrypt(request):
         "private_key_rsa": private_key_rsa,
     }
     return render(request, 'main/rsa.html', data)
+
+
+def dh_algorithm(request):
+    users = User.objects.all()
+    if request.session['current_user'] > 0:
+        user_id = request.session['current_user']
+        chats = Chat.objects.filter(Q(user_id=user_id) | Q(opponent_user_id=user_id))
+    else:
+        chats = None
+    data = {
+        "users": users,
+        "chats": chats,
+    }
+    return render(request, 'main/DH.html', data)
+
+
+def login_page(request):
+    if request.method == "POST":
+        login = request.POST['login']
+        password = request.POST['password']
+        users = User.objects.all()
+        for i in users:
+            if i.login == login and i.password == password:
+                request.session['current_user'] = i.id
+                request.session['current_user_login'] = i.login
+                request.session['current_user_password'] = i.password
+                print(request.session['current_user'])
+                return redirect('dh_key_exchanges')
+    data = {
+        "message": "Wrong login or password"
+    }
+    return render(request, 'main/login.html', data)
+
+
+
+
+
+
+
+
+def chat_page(request):
+    return render(request, 'main/chat.html')
+
+
+def get_existed_chat(u_id, receiver_id):
+    receiver_id = int(receiver_id)
+    # try:
+    #     chat = Chat.objects.get(Q(user_id=user_id), Q(opponent_user_id=receiver_id))
+    # except Chat.DoesNotExist:
+    #     chat = None
+    # # chat = get_object_or_404(Chat, Q(user_id=user_id), Q(opponent_user_id=receiver_id))
+    # if chat is None:
+    #     return None
+    # return chat
+    chats = Chat.objects.all()
+    for chat in chats:
+        if (chat.user_id.id == u_id and chat.opponent_user_id.id == receiver_id) or (
+                chat.opponent_user_id.id == u_id and chat.user_id.id == receiver_id):
+            return chat
+    return None
+
+
+def send_message(request):
+    if request.method == "POST":
+        user_id = request.session['current_user']
+        user = User.objects.get(pk=user_id)
+        receiver_id = request.POST['receiver_id']
+        message_text = request.POST['message_text']
+        chat = get_existed_chat(user_id, receiver_id)
+
+        receiver = User.objects.get(pk=receiver_id)
+        if chat is None:
+            new_chat = Chat.objects.create(user_id=user, opponent_user_id=receiver, latest_message_text=message_text)
+            c = get_existed_chat(user_id, receiver_id)
+            message = Message.objects.create(chat_id=c, user_id=receiver, sender_id=user,
+                                             message_text=message_text)
+            print(new_chat)
+            print(message)
+        else:
+            chat.latest_message_text = message_text
+            message = Message.objects.create(chat_id=chat, user_id=receiver, sender_id=user, message_text=message_text)
+            message.chat_id = chat
+            chat.save()
+        print(message_text)
+        print(receiver_id)
+
+    return redirect('dh_key_exchanges')
+
+
+def get_messages_by_chat_id(chat_id):
+    messages = Message.objects.filter(chat_id=chat_id)
+    return messages
+
+
+def chat_details(request, chat_id):
+    chat = Chat.objects.get(pk=chat_id)
+    messages = get_messages_by_chat_id(chat_id)
+    context = {
+        "chat": chat,
+        "messages": messages,
+    }
+    return render(request, 'main/chat.html', context)
+
+
+def add_message(request):
+    chat_id = 0
+    if request.method == "POST":
+        chat_id = request.POST['chat_id']
+        chat = Chat.objects.get(pk=chat_id)
+        message = request.POST['message']
+        receiver_id = request.POST['receiver_id']
+        user = User.objects.get(pk=receiver_id)
+        sender_id = request.session['current_user']
+        sender = User.objects.get(pk=sender_id)
+        print(message)
+        print(receiver_id)
+        msg = Message.objects.create(chat_id=chat, user_id=user, sender_id=sender, message_text=message)
+        chat.latest_message_text = message
+        chat.save()
+        msg.save()
+    return HttpResponseRedirect(reverse('chat_details', args=(chat_id,)))
+
+
+

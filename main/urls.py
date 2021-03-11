@@ -52,4 +52,20 @@ urlpatterns = [
     # rsa
     path('rsa_encrypt', views.rsa_encrypt, name="rsa_encrypt"),
     path('rsa_decrypt', views.rsa_decrypt, name="rsa_decrypt"),
+
+    # dh
+    path('dh_key_exchanges', views.dh_algorithm, name="dh_key_exchanges"),
+    path('exchange_key', views.dh_key_exchanges, name="exchange"),
+    path('generate_public', views.calculate_public_key, name="generate_public"),
+
+    # account
+    path('login', views.login_page, name="login"),
+    path('registration', views.registration_page, name='registration'),
+    path('logout', views.logout, name='logout'),
+
+    # chat
+    path('chat', views.chat_page, name="chat"),
+    path('send_message', views.send_message, name="send_message"),
+    path('<int:chat_id>', views.chat_details, name="chat_details"),
+    path('message', views.add_message, name="message"),
 ]
