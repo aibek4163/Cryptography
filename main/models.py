@@ -7,6 +7,7 @@ from django.db import models
 class User(models.Model):
     login = models.CharField("Login", max_length=255)
     password = models.CharField("Password", max_length=255)
+    wrong_attempts = models.IntegerField("Wrong_Attempts", default=0)
 
     def __str__(self):
         return self.login

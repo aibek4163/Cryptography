@@ -829,29 +829,54 @@ def dh_algorithm(request):
     return render(request, 'main/DH.html', data)
 
 
+def get_user_by_email(email):
+    user = User.objects.get(login=email)
+    return user
+
+
 def login_page(request):
+    wrong = ""
+    count = 4
+    # if you want to check the second point of the lab, then uncomment this lines
+    # and write to login checkpass@gmail.com and write to password targaryen
+    # full_password = ""
+    # txt = ""
+    # with open('password.txt') as f:
+    #     txt = f.read()
     if request.method == "POST":
         login = request.POST['login']
         password = request.POST['password']
-        users = User.objects.all()
-        for i in users:
-            if i.login == login and i.password == password:
-                request.session['current_user'] = i.id
-                request.session['current_user_login'] = i.login
-                request.session['current_user_password'] = i.password
-                print(request.session['current_user'])
-                return redirect('dh_key_exchanges')
+        user = get_user_by_email(login)
+        # full_password = password + txt
+        # replace password to full_password
+        if user.login == login and user.password == password:
+            user.wrong_attempts = 0
+            user.save()
+            request.session['current_user'] = user.id
+            request.session['current_user_login'] = user.login
+            request.session['current_user_password'] = user.password
+            return redirect('dh_key_exchanges')
+        elif user.wrong_attempts >= 3:
+            count = 0
+            return render(request, 'main/access_denied.html')
+        else:
+            user.wrong_attempts += 1
+            count = count - user.wrong_attempts
+            user.save()
+            wrong = "incorrect"
+
     data = {
-        "message": "Wrong login or password"
+        "wrong": wrong,
+        "count": count,
     }
     return render(request, 'main/login.html', data)
 
 
 def logout(request):
     request.session['current_user'] = 0
-    del request.session['current_user_login']
-    del request.session['current_user_password']
-    return render(request, 'main/login.html')
+    request.session['current_user_login'] = ""
+    request.session['current_user_password'] = ""
+    return redirect('login')
 
 
 def registration_page(request):

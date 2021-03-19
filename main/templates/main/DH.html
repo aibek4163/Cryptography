@@ -94,9 +94,16 @@
                                     {#                            <h5 class="card-title font-weight-bold italic"><a#}
                                     {#                                    href="/chat_details?chat_id=<%=c.getId()%>">***<%=c.getOpponent_user_id().getFull_name()%>***</a>#}
                                     {#                            </h5>#}
-                                    <h5 class="card-title"><a
-                                            href="/{{ chat.id }}">{{ chat.opponent_user_id.login }}</a>
-                                    </h5>
+                                    {% if request.session.current_user ==  chat.opponent_user_id.id %}
+                                        <h5 class="card-title"><a
+                                                href="/{{ chat.id }}">{{ chat.user_id.login }}</a>
+                                        </h5>
+                                    {% else %}
+                                        <h5 class="card-title"><a
+                                                href="/{{ chat.id }}">{{ chat.opponent_user_id.login }}</a>
+                                        </h5>
+                                    {% endif %}
+
                                     {#                            <p class="card-text"><small class="text-muted">{{ chat }}</small></p>#}
                                 </div>
                                 <p class="card-text mt-3"><small
